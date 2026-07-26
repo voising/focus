@@ -1,0 +1,73 @@
+name: focus
+options:
+    bundleIdPrefix: com.railssquad
+    createIntermediateGroups: true
+    deploymentTarget:
+        macOS: "26.0"
+
+settings:
+    base:
+        DEVELOPMENT_TEAM: VLZY44ZX2X
+        CODE_SIGN_STYLE: Automatic
+        SWIFT_VERSION: "5.0"
+        SWIFT_STRICT_CONCURRENCY: minimal
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SUPPORTED_PLATFORMS: macosx
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
+
+targets:
+    Focus:
+        type: application
+        platform: macOS
+        sources:
+            - focus
+        settings:
+            base:
+                PRODUCT_NAME: Focus
+                PRODUCT_BUNDLE_IDENTIFIER: com.railssquad.focus
+                # Accessibility (AXUIElement against other processes) does not work
+                # inside the App Sandbox, so unlike plume this target ships unsandboxed.
+                ENABLE_APP_SANDBOX: NO
+                ENABLE_HARDENED_RUNTIME: YES
+                GENERATE_INFOPLIST_FILE: YES
+                INFOPLIST_FILE: focus/Info.plist
+                INFOPLIST_KEY_NSHumanReadableCopyright: ""
+                COMBINE_HIDPI_IMAGES: YES
+                ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+            configs:
+                # Release is what gets installed to /Applications and what macOS ties the
+                # Accessibility grant to. Developer ID keeps that identity stable across
+                # rebuilds; the automatic development cert would rotate and drop the grant.
+                Release:
+                    CODE_SIGN_STYLE: Manual
+                    CODE_SIGN_IDENTITY: "Developer ID Application"
+                    PROVISIONING_PROFILE_SPECIFIER: ""
+                    OTHER_CODE_SIGN_FLAGS: "--timestamp"
+
+    FocusTests:
+        type: bundle.unit-test
+        platform: macOS
+        sources:
+            - focusTests
+        dependencies:
+            - target: Focus
+        settings:
+            base:
+                PRODUCT_BUNDLE_IDENTIFIER: com.railssquad.focusTests
+                GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+    Focus:
+        build:
+            targets:
+                Focus: all
+                FocusTests: [test]
+        run:
+            config: Debug
+        test:
+            config: Debug
+            targets:
+                - FocusTests
+        archive:
+            config: Release

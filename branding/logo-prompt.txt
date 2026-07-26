@@ -1,0 +1,24 @@
+Create a modern, minimal macOS app icon for a utility app called "Focus".
+
+App description: it shrinks a large external monitor down to a smaller working area by
+painting black borders around the edges, so you work inside a calm, narrower window of
+screen instead of a sprawling 32-inch panel.
+
+Concept: a rounded-square icon. Inside it, a thick solid near-black frame occupying the
+outer band, and one smaller rectangle perfectly centered inside that frame — the bright
+"focused" working area. The composition should read instantly as "a screen inside a
+screen", or a viewfinder.
+
+Style requirements:
+- Flat design. No gradients, no 3D, no bevels, no drop shadows, no glassmorphism.
+- Single iconic geometric mark, absolutely no text or letters.
+- Legible at 1024x1024 AND at 32x32 — only large shapes, no fine detail or thin lines.
+- Exactly two colors plus the frame: near-black #0B0B0F for the outer band, and a warm
+  amber #FFB020 for the inner focused rectangle.
+- Generous padding: the mark must not touch the icon edges.
+- Rounded-square (macOS Tahoe superellipse) outer silhouette, filled edge to edge.
+- Premium and restrained, in the visual language of Linear, Things 3 and Bartender.
+- No generic symbols: no eyes, no targets/bullseyes, no crosshairs, no magnifying glasses,
+  no lightbulbs, no gears.
+
+Output: perfectly square, high resolution, PNG.

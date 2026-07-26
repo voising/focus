@@ -1,0 +1,5 @@
+# Generated from project.yml by xcodegen — project.yml is the source of truth.
+focus.xcodeproj/
+build/
+DerivedData/
+.DS_Store
