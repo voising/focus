@@ -58,14 +58,6 @@ final class OverlayWindow: NSWindow {
         level = NSWindow.Level(rawValue: raw)
     }
 
-    func fade(to alpha: CGFloat, duration: TimeInterval = 0.2, completion: (() -> Void)? = nil) {
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = duration
-            animator().alphaValue = alpha
-        } completionHandler: {
-            completion?()
-        }
-    }
 }
 
 /// Four opaque black rectangles. Cheaper and more obviously correct than masking a single

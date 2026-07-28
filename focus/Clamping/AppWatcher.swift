@@ -67,17 +67,22 @@ final class AppWatcher {
 
     // MARK: - Window enumeration
 
-    /// Every standard window of every observed app. Used for the initial sweep when the
-    /// effect is switched on, since no notification fires for windows that already exist.
-    func allWindows() -> [AXWindow] {
-        applications.values.flatMap { application -> [AXWindow] in
-            var value: CFTypeRef?
-            guard AXUIElementCopyAttributeValue(
-                application, kAXWindowsAttribute as CFString, &value
-            ) == .success,
-                let elements = value as? [AXUIElement] else { return [] }
-            return elements.map(AXWindow.init(element:))
-        }
+    /// One element per ordinary running app. Building these is a purely local operation,
+    /// so unlike `start()` it costs nothing and can be called before observation begins.
+    func applicationElements() -> [AXUIElement] {
+        NSWorkspace.shared.runningApplications.compactMap(Self.element(for:))
+    }
+
+    /// Every window of one app. Split out from the app list so the initial sweep — no
+    /// notification fires for windows that already exist — can fan out over the apps
+    /// instead of paying for one round trip after another.
+    static func windows(of application: AXUIElement) -> [AXWindow] {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(
+            application, kAXWindowsAttribute as CFString, &value
+        ) == .success,
+            let elements = value as? [AXUIElement] else { return [] }
+        return elements.map(AXWindow.init(element:))
     }
 
     // MARK: - Observation
@@ -103,20 +108,26 @@ final class AppWatcher {
         applications[pid] = nil
     }
 
-    private func observe(_ application: NSRunningApplication) {
-        guard application.activationPolicy == .regular else { return }
+    private static func element(for application: NSRunningApplication) -> AXUIElement? {
+        guard application.activationPolicy == .regular else { return nil }
 
         let pid = application.processIdentifier
-        guard pid != ProcessInfo.processInfo.processIdentifier, observers[pid] == nil else { return }
+        guard pid != ProcessInfo.processInfo.processIdentifier else { return nil }
+
+        let element = AXUIElementCreateApplication(pid)
+        // An app that is beachballing will otherwise stall its caller on every attribute
+        // read.
+        AXUIElementSetMessagingTimeout(element, 1.0)
+        return element
+    }
+
+    private func observe(_ application: NSRunningApplication) {
+        let pid = application.processIdentifier
+        guard observers[pid] == nil, let element = Self.element(for: application) else { return }
 
         var observer: AXObserver?
         guard AXObserverCreate(pid, axObserverCallback, &observer) == .success,
               let observer else { return }
-
-        let element = AXUIElementCreateApplication(pid)
-        // An app that is beachballing will otherwise stall the main thread on every
-        // attribute read.
-        AXUIElementSetMessagingTimeout(element, 1.0)
 
         let context = Unmanaged.passUnretained(self).toOpaque()
         for notification in Self.notifications {

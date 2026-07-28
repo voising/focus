@@ -73,13 +73,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             WindowClamper.requestTrust()
         }
 
+        // Order matters for how the toggle *looks*. The bars are laid out, raised to their
+        // final level, and pushed to the window server first, all inside this run loop
+        // turn; only then does the clamp pass block the main thread talking to every app.
+        // Reversed, the windows visibly resize while the bars are still waiting to commit.
         overlayController.setActive(isEnabled)
         overlayController.refresh()
-
-        clamper.setActive(isEnabled)
-        clamper.refresh()
-
         updateMenuBarMasking()
+        overlayController.present()
+
+        // Switching on already sweeps every window, so refreshing as well would pay for a
+        // second full pass over the Accessibility API for nothing.
+        if !clamper.setActive(isEnabled) {
+            clamper.refresh()
+        }
 
         statusItemController?.shortcutUnavailable = isShortcutUnavailable
     }

@@ -61,6 +61,12 @@ struct AXWindow {
 
     /// Window frame in AppKit coordinates (bottom-left origin).
     var frame: CGRect? {
+        frame(referenceHeight: ScreenCoordinates.referenceHeight)
+    }
+
+    /// As `frame`, with the flip axis supplied. `NSScreen` is main-thread only, so a
+    /// caller working off the main thread reads it once up front and passes it here.
+    func frame(referenceHeight: CGFloat) -> CGRect? {
         guard let positionValue = copyAXValue(kAXPositionAttribute),
               let sizeValue = copyAXValue(kAXSizeAttribute) else { return nil }
 
@@ -69,7 +75,10 @@ struct AXWindow {
         guard AXValueGetValue(positionValue, .cgPoint, &position),
               AXValueGetValue(sizeValue, .cgSize, &size) else { return nil }
 
-        return ScreenCoordinates.appKitRect(fromAX: CGRect(origin: position, size: size))
+        return ScreenCoordinates.flip(
+            CGRect(origin: position, size: size),
+            referenceHeight: referenceHeight
+        )
     }
 
     /// Writes an AppKit-coordinate frame back to the window.
@@ -79,7 +88,13 @@ struct AXWindow {
     /// refuse to move until it has shrunk. Bracketing the resize handles both orders.
     @discardableResult
     func setFrame(_ appKitRect: CGRect) -> Bool {
-        let axRect = ScreenCoordinates.axRect(fromAppKit: appKitRect)
+        setFrame(appKitRect, referenceHeight: ScreenCoordinates.referenceHeight)
+    }
+
+    /// As `setFrame`, with the flip axis supplied — see `frame(referenceHeight:)`.
+    @discardableResult
+    func setFrame(_ appKitRect: CGRect, referenceHeight: CGFloat) -> Bool {
+        let axRect = ScreenCoordinates.flip(appKitRect, referenceHeight: referenceHeight)
         var position = axRect.origin
         var size = axRect.size
 

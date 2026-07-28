@@ -1,4 +1,5 @@
 import AppKit
+import QuartzCore
 
 /// Owns the black-frame windows and keeps them matched to the current screen layout.
 ///
@@ -56,6 +57,17 @@ final class OverlayController {
         show()
     }
 
+    /// Hands the bars to the window server now instead of at the end of the current run
+    /// loop turn. Toggling goes on to clamp every window, which blocks the main thread on
+    /// a round trip to each running app; without this the commit lands only once that is
+    /// finished, so the windows are seen to resize before the bars ever show up.
+    func present() {
+        for window in windows.values {
+            window.displayIfNeeded()
+        }
+        CATransaction.flush()
+    }
+
     @objc private func screenParametersChanged() {
         // Displays that vanished must take their overlay with them, otherwise a stale
         // black rectangle is left stranded on the remaining screen.
@@ -84,21 +96,20 @@ final class OverlayController {
             } else {
                 guard let screen = NSScreen.screens.first(where: { $0.displayID == displayID }) else { continue }
                 window = OverlayWindow(screen: screen)
-                window.alphaValue = 0
                 windows[displayID] = window
             }
 
             window.apply(geometry, aboveWindows: aboveWindows, coversMenuBar: coversMenuBar)
             window.orderFront(nil)
-            window.fade(to: 1)
         }
     }
 
+    /// No fade in either direction: the bars are half of a toggle whose other half — the
+    /// windows snapping to the working area — is instant, and animating one of the two is
+    /// what makes the switch look like two separate events.
     private func hide() {
         for window in windows.values {
-            window.fade(to: 0) { [weak window] in
-                window?.orderOut(nil)
-            }
+            window.orderOut(nil)
         }
     }
 }
